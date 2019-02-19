@@ -6,6 +6,7 @@ class Checker {
     constructor(config) {
         this.config = config;
         this.JsonRpc = new JsonRpc(config.mainnet.endpoint, {fetch});
+        this.filter = this.config.filter ? this.config.filter : [];
     }
 
     async loadMainnet() {
@@ -14,7 +15,8 @@ class Checker {
         let _this = this;
         getProds.rows.forEach((prod) => {
             let bp = new BlockProducer(prod);
-            if (!bp.isActive())
+
+            if (!bp.isActive() || (_this.config.filter.length && !_this.config.filter.includes(bp.getOwner())))
                 return;
 
             this.config.checks.forEach((check) => {
