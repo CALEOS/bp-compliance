@@ -19,6 +19,11 @@ class Checker {
             if (!bp.isActive() || (_this.config.filter.length && !_this.config.filter.includes(bp.getOwner())))
                 return;
 
+            if (!this.config.initCheck)
+                throw new Error("Config does not have an initCheck defined");
+
+            bp.setInitCheck(new this.config.initCheck(bp));
+
             this.config.checks.forEach((check) => {
                 bp.addCheck(new check(bp));
             });
@@ -34,30 +39,28 @@ class Checker {
             validations.push(this.prods[bpName].validate());
 
         this.log("Waiting on validations...");
-        
         await Promise.all(validations);
-
         this.log("Validations complete");
+    }
 
+    async logValidationResults(errorsOnly=false) {
+        await this.getValidationResults();
         let _this = this;
         Object.keys(this.prods).forEach((bpName) => {
             let prod = _this.prods[bpName];
 
-            prod.checks.forEach((check) => {
-                let errorMessages = [];
+            _this.log(`======${bpName}======`);
+
+            prod.getChecks().forEach((check) => {
                 check.getResults().forEach((checkResult) => {
-                    if (checkResult.hasError())
-                        errorMessages.push(checkResult.getMessage());
+                    if (checkResult.hasError() || !errorsOnly)
+                        _this.log(checkResult.toString());
                 });
-
-                if (errorMessages.length)
-                    _this.log(`${bpName} has failures ${errorMessages.join(', ')}`);
             });
-        });
-    }
+            this.log(`bp.json: ${JSON.stringify(prod.getBpJson(), null, 4)}`)
 
-    async logValidationResults() {
-        let validationResults = await this.getValidationResults();
+            _this.log(`========================`);
+        });
     }
 
     log(message) {

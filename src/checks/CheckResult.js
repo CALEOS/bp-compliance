@@ -17,6 +17,10 @@ class CheckResult {
         return this.message;
     }
 
+    toString() {
+        return `${this.status.toUpperCase()}: ${this.message}`;
+    }
+
 }
 
 module.exports = CheckResult;
