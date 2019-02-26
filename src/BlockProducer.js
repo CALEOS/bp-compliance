@@ -25,7 +25,12 @@ class BlockProducer {
     constructor (prod) {
         this.logger = new Logger();
         this.prod = prod;
+        this.bpJson = null;
         this.checks = [];
+    }
+
+    setInitCheck (check) {
+        this.initCheck = check;
     }
 
     addCheck (check) {
@@ -34,6 +39,11 @@ class BlockProducer {
 
     async validate () {
         let checkPromises = [];
+
+        if (!this.initCheck)
+            throw new Error("No initialization check defined");
+
+        await this.initCheck.check();
 
         this.checks.forEach((check) => {
             checkPromises.push(check.check());
@@ -49,6 +59,11 @@ class BlockProducer {
     getFailures () {
         let failures = [];
 
+        if (this.initCheck.hasError())
+            this.initCheck.getErrors().forEach((error) => {
+                failures.push(error);
+            })
+
         this.checks.forEach((check) => {
             if (check.hasError()) {
                 check.getErrors().forEach((error) => {
@@ -60,16 +75,37 @@ class BlockProducer {
         return failures;
     }
 
+    setBpJson (bpJson) {
+        if (!bpJson)
+            return;
+
+        this.bpJson =  bpJson;
+    }
+
+    getBpJson () {
+        return this.bpJson;
+    }
+
+    hasBpJson () {
+        return this.bpJson != null;
+    }
+
     getOwner () {
         return this.prod.owner;
     }
 
     getUrl () {
-        return this.prod.url;
+        return this.prod.url.replace(/\/$/, "");
     }
 
     isActive () {
         return this.prod.is_active === 1;
+    }
+
+    getChecks () {
+        let checks = this.checks.slice(0);
+        checks.unshift(this.initCheck);
+        return checks;
     }
 
     log(message) {

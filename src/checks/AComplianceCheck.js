@@ -27,6 +27,12 @@ class AComplianceCheck {
         this.results.push(new CheckResult('error', message));
     }
 
+    toString () {
+        this.results.forEach((checkResult) => {
+            this.log(checkResult.toString());
+        });
+    }
+
     log (message) {
         this.logger.log(message);
     }
